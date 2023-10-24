@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Recognition</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Custom styles */
+        body {
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .video-container {
+            width: 100%;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+        }
+
+        #capture-btn {
+            display: block;
+            margin: 0 auto;
+        }
+        .upload-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Face Recognition</h1>
+        <div class="video-container">
+            <video id="video" autoplay></video>
+        </div>
+        <button id="capture-btn" class="btn btn-primary">Capture Image</button>
+    </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const videoElement = document.getElementById("video");
+        const captureButton = document.getElementById("capture-btn");
+        let mediaStream = null;
+        let canvas = null;
+
+        // Check if getUserMedia is available
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Access the camera stream
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    mediaStream = stream;
+                    videoElement.srcObject = stream;
+
+                    // Create a canvas element to capture the image
+                    canvas = document.createElement("canvas");
+                    const context = canvas.getContext("2d");
+
+                    // Capture image from video stream
+                    captureButton.addEventListener("click", function () {
+                        const videoWidth = videoElement.videoWidth;
+                        const videoHeight = videoElement.videoHeight;
+                        canvas.width = videoWidth;
+                        canvas.height = videoHeight;
+                        context.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
+
+                        // Convert the captured image to a base64 string
+                        const imageDataURL = canvas.toDataURL("image/jpeg");
+
+                        // Stop the media stream
+                        mediaStream.getTracks().forEach(function (track) {
+                            track.stop();
+                        });
+
+                        // Clear the video element source
+                        videoElement.srcObject = null;
+
+                        // Create a form and input element to send the captured image to the server
+                        const form = document.createElement("form");
+                        form.method = "POST";
+                        form.action = "/recognize";
+                        form.style.display = "none";
+
+                        const input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = "image";
+                        input.value = imageDataURL;
+
+                        // Append the input element to the form
+                        form.appendChild(input);
+
+                        // Append the form to the document body and submit it
+                        document.body.appendChild(form);
+                        form.submit();
+                    });
+                })
+                .catch(function (error) {
+                    console.log("Error accessing camera:", error);
+                });
+        } else {
+            console.log("getUserMedia is not supported");
+        }
+    });
+</script>
+<div class="upload-link">
+    <a href="/attendance" id="attendance-link">View Attendance</a>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var attendanceLink = document.getElementById("attendance-link");
+        var currentDate = new Date().toISOString().slice(0, 10);
+        attendanceLink.href = "/attendance/" + currentDate;
+    });
+</script>
+<div class="upload-link">
+            <a href="/upload_known_faces">Upload Known Faces</a>
+        </div>
+
+</body>
+</html>
